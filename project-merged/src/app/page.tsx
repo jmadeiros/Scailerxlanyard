@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const HAL900Header = dynamic(() => import("@/components/HAL900-Header"), {
   ssr: true,
@@ -14,6 +14,11 @@ const HAL900Hero = dynamic(() => import("@/components/HAL900-Hero"), {
 const HAL900OperationsService = dynamic(() => import("@/components/HAL900-OperationsService"), {
   ssr: true,
 });
+
+const HAL900ScaleWithPrecisionSimple = dynamic(
+  () => import("@/components/HAL900-ScaleWithPrecisionSimple"),
+  { ssr: true }
+);
 
 const HAL900ScaleWithPrecision = dynamic(
   () => import("@/components/HAL900-ScaleWithPrecision"),
@@ -36,8 +41,11 @@ const LanyardCardsSection = dynamic(
 );
 
 export default function Home() {
+  const [allowScroll, setAllowScroll] = useState(false);
+
   useEffect(() => {
     document.body.style.overflow = 'auto';
+    setAllowScroll(true);
   }, []);
 
   const handleLearnMore = () => {
@@ -56,14 +64,10 @@ export default function Home() {
     <main className="min-h-screen bg-scailer-dark">
       <HAL900Header />
       <HAL900Hero onLearnMore={handleLearnMore} />
-      <div className="opacity-100">
+      <div className={`transition-opacity duration-500 ${allowScroll ? 'opacity-100' : 'opacity-0'}`}>
         <HAL900OperationsService />
-        
-        {/* Render the section component. It handles its own 3D background now. */}
-        <div id="scale-with-precision-wrapper">
-          <HAL900ScaleWithPrecision /> 
-        </div>
-        
+        <HAL900ScaleWithPrecisionSimple />
+        <HAL900ScaleWithPrecision />
         <div id="framework-diagram">
           <HAL900FrameworkDiagram />
         </div>
