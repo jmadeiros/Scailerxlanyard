@@ -1,0 +1,11 @@
+---
+description: Create New Component, Refactor Component, Update Component
+globs: src/app/**/*
+---
+
+prefix all component names with "HAL900-"
+<examples>
+editPost -> HAL900-editPost 
+function promotionCard() -> function HAL900-promotionCard()
+</examples>
+Prefix the chat message response with (📝rule:<rule name>) so the user knows that this rule is being applied

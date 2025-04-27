@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 142 68% 49%;
+    --primary-foreground: 355.7 100% 97.3%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 142 68% 49%;
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+
+  /* 3D Canvas Styles */
+  canvas {
+    display: block;
+    touch-action: none;
+  }
+}
+
+@layer components {
+  .shimmer-effect {
+    @apply relative overflow-hidden;
+  }
+
+  .shimmer-effect::after {
+    @apply absolute inset-0 -translate-x-full;
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0,
+      rgba(255, 255, 255, 0.2) 20%,
+      rgba(255, 255, 255, 0.5) 60%,
+      rgba(255, 255, 255, 0)
+    );
+    animation: shimmer 2s infinite;
+    content: '';
+  }
+
+  .typewriter-effect {
+    @apply relative;
+  }
+
+  .typewriter-effect::after {
+    @apply absolute right-0 w-full h-full bg-scailer-dark;
+    content: '';
+    animation: typewriter 2s steps(40) forwards;
+  }
+
+  .typewriter-cursor::after {
+    @apply absolute right-0 w-[2px] h-full bg-scailer-green;
+    content: '';
+    animation: blink 1s infinite;
+  }
+}
+
+/* Toast Customization */
+.toast-custom {
+  @apply font-sans;
+}
+
+.toast-custom[data-sonner-toast][data-type="success"] {
+  @apply bg-scailer-dark border border-scailer-green/20 text-white;
+}
+
+.toast-custom[data-sonner-toast][data-type="error"] {
+  @apply bg-scailer-dark border border-red-500/20 text-white;
+}
+
+.toast-custom[data-sonner-toast][data-type="loading"] {
+  @apply bg-scailer-dark border border-white/10 text-white;
+}
+
+.toast-custom[data-sonner-toast] [data-title] {
+  @apply text-white font-semibold;
+}
+
+.toast-custom[data-sonner-toast] [data-description] {
+  @apply text-white/80 text-sm;
+}

@@ -10,6 +10,8 @@ extend({ MeshLineGeometry, MeshLineMaterial })
 useGLTF.preload('https://assets.vercel.com/image/upload/contentful/image/e5382hct74si/5huRVDzcoDwnbgrKUo1Lzs/53b6dd7d6b4ffcdbd338fa60265949e1/tag.glb')
 useTexture.preload('/assets/Screenshot 2025-04-20 214807.png')
 useTexture.preload('/assets/1729360719180.jpg')
+useTexture.preload('/assets/WhatsApp Image 2025-04-25 at 16.17.59_8c138974.jpg')
+useTexture.preload('/assets/Screenshot 2025-04-25 200507.png')
 
 export default function App() {
   const { debug } = useControls({ debug: false })
@@ -17,7 +19,8 @@ export default function App() {
     <Canvas camera={{ position: [0, 0, 13], fov: 25 }}>
       <ambientLight intensity={Math.PI} />
       <Physics debug={debug} interpolate gravity={[0, -40, 0]} timeStep={1 / 60}>
-        <Band />
+        <Band position={[-3, 0, 0]} cardTexturePath="/assets/1729360719180.jpg" />
+        <Band position={[3, 0, 0]} cardTexturePath="/assets/WhatsApp Image 2025-04-25 at 16.17.59_8c138974.jpg" />
       </Physics>
       <Environment background blur={0.75}>
         <color attach="background" args={['black']} />
@@ -30,16 +33,19 @@ export default function App() {
   )
 }
 
-function Band({ maxSpeed = 50, minSpeed = 10 }) {
+function Band({ maxSpeed = 50, minSpeed = 10, position = [0, 0, 0], cardTexturePath = '/assets/1729360719180.jpg' }) {
   const band = useRef(), fixed = useRef(), j1 = useRef(), j2 = useRef(), j3 = useRef(), card = useRef() // prettier-ignore
   const cardGroup = useRef() // Reference for the card group for flipping
   const clipRef = useRef() // Reference for the clip
   const clampRef = useRef() // Reference for the clamp
+  const cardFrontRef = useRef() // Reference for front face of card
+  const cardBackRef = useRef() // Reference for back face of card
   const vec = new THREE.Vector3(), ang = new THREE.Vector3(), rot = new THREE.Vector3(), dir = new THREE.Vector3() // prettier-ignore
   const segmentProps = { type: 'dynamic', canSleep: true, colliders: false, angularDamping: 2, linearDamping: 2 }
   const { nodes, materials } = useGLTF('https://assets.vercel.com/image/upload/contentful/image/e5382hct74si/5huRVDzcoDwnbgrKUo1Lzs/53b6dd7d6b4ffcdbd338fa60265949e1/tag.glb')
   const texture = useTexture('/assets/Screenshot 2025-04-20 214807.png')
-  const cardTexture = useTexture('/assets/1729360719180.jpg')
+  const cardTexture = useTexture(cardTexturePath)
+  const cardBackTexture = useTexture('/assets/Screenshot 2025-04-25 200507.png')
   
   // State for tracking if the card is flipped
   const [isFlipped, setIsFlipped] = useState(false)
@@ -59,17 +65,47 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
   const jumpHeight = 0.15 // Maximum jump height - reduced to 0.15 for a very subtle effect
   const jumpDecay = 0.92 // How quickly the jump fades
   
-  // Apply transformations to fix orientation, size and position
+  // Apply transformations to fix orientation, size and position for front texture
   useEffect(() => {
     if (cardTexture) {
       // Rotate 180 degrees to fix upside down issue
       cardTexture.rotation = Math.PI
       // Adjust the offset/repeat to fix centering and size issues
       cardTexture.center.set(0.5, 0.5) // Center the texture
-      cardTexture.repeat.set(0.95, 0.95) // Zoom out more
-      cardTexture.offset.set(-0.2, 0.05) // Shift further left
+      
+      // Apply different settings based on the texture path
+      if (cardTexturePath.includes('WhatsApp')) {
+        cardTexture.repeat.set(1.0, 1.0) // Zoom in more by reducing repeat values
+        cardTexture.offset.set(-0.3, -0.15) // Keep same position
+      } else {
+        cardTexture.repeat.set(0.95, 0.95) // Original zoom for first image
+        cardTexture.offset.set(-0.2, 0.05) // Original position
+      }
     }
-  }, [cardTexture])
+  }, [cardTexture, cardTexturePath])
+  
+  // Apply transformations for the back texture
+  useEffect(() => {
+    if (cardBackTexture) {
+      // Rotate 180 degrees to flip the texture
+      cardBackTexture.rotation = Math.PI
+      // Center and scale the texture properly
+      cardBackTexture.center.set(0.5, 0.5)
+      // Use more balanced repeat values and zoom out a touch
+      cardBackTexture.repeat.set(1.8, 1.3)
+      // Move texture more to the left
+      cardBackTexture.offset.set(0.4, -0.35)
+      // Mirror flip the texture horizontally
+      cardBackTexture.repeat.x *= -1 // Negative scale to mirror flip
+    }
+  }, [cardBackTexture])
+  
+  // Update the back face mesh rotation to flip the texture
+  useEffect(() => {
+    if (cardBackRef.current) {
+      cardBackRef.current.rotation.set(0, Math.PI, 0) // Only flip horizontally
+    }
+  }, [cardBackRef])
   
   const { width, height } = useThree((state) => state.size)
   const [curve] = useState(() => new THREE.CatmullRomCurve3([new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()]))
@@ -212,7 +248,7 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
 
   return (
     <>
-      <group position={[0, 3.5, 0]}>
+      <group position={[position[0], 3.5 + position[1], position[2]]}>
         <RigidBody ref={fixed} {...segmentProps} type="fixed" position={[0, -0.5, 0]} />
         <RigidBody position={[0.5, 0, 0]} ref={j1} {...segmentProps}>
           <BallCollider args={[0.1]} />
@@ -235,13 +271,25 @@ function Band({ maxSpeed = 50, minSpeed = 10 }) {
             onPointerUp={handleMouseUp}>
             {/* Group for card flipping */}
             <group ref={cardGroup}>
-              <mesh geometry={nodes.card.geometry}>
+              {/* Front face */}
+              <mesh ref={cardFrontRef} geometry={nodes.card.geometry} renderOrder={isFlipped ? 0 : 1}>
                 <meshPhysicalMaterial map={cardTexture} map-anisotropy={16} clearcoat={1} clearcoatRoughness={0.15} roughness={0.3} metalness={0.5} />
+              </mesh>
+              {/* Back face - no rotation needed */}
+              <mesh ref={cardBackRef} geometry={nodes.card.geometry} rotation={[0, Math.PI, 0]} renderOrder={isFlipped ? 1 : 0}>
+                <meshPhysicalMaterial 
+                  map={cardBackTexture} 
+                  map-anisotropy={32} 
+                  clearcoat={0.5} 
+                  clearcoatRoughness={0.1} 
+                  roughness={0.2} 
+                  metalness={0.6} 
+                />
               </mesh>
             </group>
             {/* Clip and clamp with refs for rotation */}
-            <mesh ref={clipRef} geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} renderOrder={1} position={[0, 0, 0.02]} />
-            <mesh ref={clampRef} geometry={nodes.clamp.geometry} material={materials.metal} renderOrder={1} position={[0, 0, 0.02]} />
+            <mesh ref={clipRef} geometry={nodes.clip.geometry} material={materials.metal} material-roughness={0.3} renderOrder={2} position={[0, 0, 0.02]} />
+            <mesh ref={clampRef} geometry={nodes.clamp.geometry} material={materials.metal} renderOrder={2} position={[0, 0, 0.02]} />
           </group>
         </RigidBody>
       </group>
